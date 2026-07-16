@@ -111,8 +111,8 @@
 <section class="productos">
   <header class="head">
     <div class="titulos">
-      {#if data.proyecto}
-        <a class="volver" href={`/proyectos/${data.proyecto.id}`}>← {data.proyecto.nombre}</a>
+      {#if data.negocio}
+        <a class="volver" href={`/negocios/${data.negocio.id}`}>← {data.negocio.nombre}</a>
       {/if}
       <h1>{data.menu.nombre}</h1>
     </div>

@@ -1,7 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { and, eq, desc } from 'drizzle-orm';
 import { db } from '$lib/server/db';
-import { usuarios, proyectos } from '$lib/server/db/schema';
+import { usuarios, negocios } from '$lib/server/db/schema';
 import type { Actions, PageServerLoad } from './$types';
 
 // Por ahora el dueño de todo es el usuario 'default'. Lo creamos la primera vez
@@ -21,11 +21,11 @@ export const load: PageServerLoad = async () => {
 	const usuarioId = getDefaultUserId();
 	const lista = db
 		.select()
-		.from(proyectos)
-		.where(eq(proyectos.usuarioId, usuarioId))
-		.orderBy(desc(proyectos.creadoEn))
+		.from(negocios)
+		.where(eq(negocios.usuarioId, usuarioId))
+		.orderBy(desc(negocios.creadoEn))
 		.all();
-	return { proyectos: lista };
+	return { negocios: lista };
 };
 
 export const actions: Actions = {
@@ -33,30 +33,30 @@ export const actions: Actions = {
 		const data = await request.formData();
 		const nombre = String(data.get('nombre') ?? '').trim();
 		if (!nombre) {
-			return fail(400, { error: 'El nombre del proyecto no puede estar vacío.' });
+			return fail(400, { error: 'El nombre del negocio no puede estar vacío.' });
 		}
 		const usuarioId = getDefaultUserId();
-		db.insert(proyectos).values({ usuarioId, nombre }).run();
+		db.insert(negocios).values({ usuarioId, nombre }).run();
 		return { success: true };
 	},
 
-	renombrarProyecto: async ({ request }) => {
+	renombrarNegocio: async ({ request }) => {
 		const data = await request.formData();
-		const proyectoId = Number(data.get('proyectoId'));
+		const negocioId = Number(data.get('negocioId'));
 		const nombre = String(data.get('nombre') ?? '').trim();
-		if (!Number.isInteger(proyectoId)) return fail(400, { error: 'Proyecto inválido' });
-		if (!nombre) return fail(400, { error: 'El nombre del proyecto no puede estar vacío.' });
+		if (!Number.isInteger(negocioId)) return fail(400, { error: 'Negocio inválido' });
+		if (!nombre) return fail(400, { error: 'El nombre del negocio no puede estar vacío.' });
 
-		// El proyecto debe ser del usuario 'default'.
+		// El negocio debe ser del usuario 'default'.
 		const usuarioId = getDefaultUserId();
-		const proyecto = db
+		const negocio = db
 			.select()
-			.from(proyectos)
-			.where(and(eq(proyectos.id, proyectoId), eq(proyectos.usuarioId, usuarioId)))
+			.from(negocios)
+			.where(and(eq(negocios.id, negocioId), eq(negocios.usuarioId, usuarioId)))
 			.get();
-		if (!proyecto) return fail(404, { error: 'Proyecto no encontrado' });
+		if (!negocio) return fail(404, { error: 'Negocio no encontrado' });
 
-		db.update(proyectos).set({ nombre }).where(eq(proyectos.id, proyectoId)).run();
+		db.update(negocios).set({ nombre }).where(eq(negocios.id, negocioId)).run();
 		return { success: true };
 	}
 };

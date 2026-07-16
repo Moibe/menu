@@ -2,7 +2,7 @@ import { sqliteTable, integer, text, real, index } from 'drizzle-orm/sqlite-core
 import { relations } from 'drizzle-orm';
 
 // Jerarquía del dominio (uno-a-muchos en cascada):
-//   usuario ──< proyecto ──< menú ──< producto
+//   usuario ──< negocio ──< menú ──< producto
 // Borrar un padre arrastra a todos sus hijos (onDelete: 'cascade').
 
 // Helper: timestamp de creación por defecto = ahora.
@@ -11,7 +11,7 @@ const creadoEn = () =>
 		.notNull()
 		.$defaultFn(() => new Date());
 
-// 1 usuario tiene varios proyectos.
+// 1 usuario tiene varios negocios.
 export const usuarios = sqliteTable('usuarios', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	email: text('email').notNull().unique(),
@@ -19,9 +19,9 @@ export const usuarios = sqliteTable('usuarios', {
 	creadoEn: creadoEn()
 });
 
-// 1 proyecto pertenece a un usuario y tiene varios menús.
-export const proyectos = sqliteTable(
-	'proyectos',
+// 1 negocio pertenece a un usuario y tiene varios menús.
+export const negocios = sqliteTable(
+	'negocios',
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
 		usuarioId: integer('usuario_id')
@@ -31,24 +31,24 @@ export const proyectos = sqliteTable(
 		descripcion: text('descripcion'),
 		creadoEn: creadoEn()
 	},
-	(t) => [index('proyectos_usuario_idx').on(t.usuarioId)]
+	(t) => [index('negocios_usuario_idx').on(t.usuarioId)]
 );
 
-// 1 menú pertenece a un proyecto y tiene varios productos.
+// 1 menú pertenece a un negocio y tiene varios productos.
 export const menus = sqliteTable(
 	'menus',
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
-		proyectoId: integer('proyecto_id')
+		negocioId: integer('negocio_id')
 			.notNull()
-			.references(() => proyectos.id, { onDelete: 'cascade' }),
+			.references(() => negocios.id, { onDelete: 'cascade' }),
 		nombre: text('nombre').notNull(),
-		// Para ordenar los menús dentro del proyecto.
+		// Para ordenar los menús dentro del negocio.
 		orden: integer('orden').notNull().default(0),
 		activo: integer('activo', { mode: 'boolean' }).notNull().default(true),
 		creadoEn: creadoEn()
 	},
-	(t) => [index('menus_proyecto_idx').on(t.proyectoId)]
+	(t) => [index('menus_negocio_idx').on(t.negocioId)]
 );
 
 // 1 producto pertenece a un menú.
@@ -89,16 +89,16 @@ export const productoFotos = sqliteTable(
 
 // Relaciones para la API de consultas de drizzle (db.query.*.findMany({ with: {...} })).
 export const usuariosRelations = relations(usuarios, ({ many }) => ({
-	proyectos: many(proyectos)
+	negocios: many(negocios)
 }));
 
-export const proyectosRelations = relations(proyectos, ({ one, many }) => ({
-	usuario: one(usuarios, { fields: [proyectos.usuarioId], references: [usuarios.id] }),
+export const negociosRelations = relations(negocios, ({ one, many }) => ({
+	usuario: one(usuarios, { fields: [negocios.usuarioId], references: [usuarios.id] }),
 	menus: many(menus)
 }));
 
 export const menusRelations = relations(menus, ({ one, many }) => ({
-	proyecto: one(proyectos, { fields: [menus.proyectoId], references: [proyectos.id] }),
+	negocio: one(negocios, { fields: [menus.negocioId], references: [negocios.id] }),
 	productos: many(productos)
 }));
 

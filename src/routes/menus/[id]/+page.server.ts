@@ -1,7 +1,7 @@
 import { error, fail } from '@sveltejs/kit';
 import { and, eq, desc, inArray } from 'drizzle-orm';
 import { db } from '$lib/server/db';
-import { menus, proyectos, productos, productoFotos } from '$lib/server/db/schema';
+import { menus, negocios, productos, productoFotos } from '$lib/server/db/schema';
 import { saveImage, MediaError } from '$lib/server/media';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -11,7 +11,7 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	const menu = db.select().from(menus).where(eq(menus.id, id)).get();
 	if (!menu) throw error(404, 'Menú no encontrado');
-	const proyecto = db.select().from(proyectos).where(eq(proyectos.id, menu.proyectoId)).get();
+	const negocio = db.select().from(negocios).where(eq(negocios.id, menu.negocioId)).get();
 
 	const lista = db
 		.select()
@@ -34,7 +34,7 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	return {
 		menu,
-		proyecto,
+		negocio,
 		productos: lista.map((p) => ({ ...p, fotos: fotosPorProducto.get(p.id) ?? [] }))
 	};
 };

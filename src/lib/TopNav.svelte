@@ -1,8 +1,5 @@
 <script lang="ts">
-  // Barra superior "de vidrio" con tilt 3D al pasar el mouse + responsive (en móvil
-  // colapsa a solo-íconos). Los items son de ejemplo: reemplázalos por los de tu app.
-  import { page } from '$app/state';
-
+  // Barra superior "de vidrio" con tilt 3D al pasar el mouse.
   let tiltX = $state(0);
   let tiltY = $state(0);
 
@@ -18,9 +15,6 @@
     tiltX = 0;
     tiltY = 0;
   }
-
-  // Edita estos items por las secciones reales de tu app.
-  const items = [{ href: '/', label: 'Inicio' }];
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -34,15 +28,6 @@
     <span class="brand-ico" aria-hidden="true"></span>
     <span class="brand-title">Menu</span>
   </a>
-
-  <nav class="topnav-nav">
-    {#each items as it (it.href)}
-      <a href={it.href} class="nav-item" aria-current={page.url.pathname === it.href ? 'page' : undefined}>
-        <span class="nav-ico" aria-hidden="true"></span>
-        <span class="nav-label">{it.label}</span>
-      </a>
-    {/each}
-  </nav>
 </header>
 
 <style>
@@ -97,49 +82,7 @@
     font-weight: 600;
   }
 
-  .topnav-nav {
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-    margin-left: 1.25rem;
-    padding-left: 1.25rem;
-    border-left: 1px solid rgba(0, 0, 0, 0.1);
-  }
-
-  .nav-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.45rem;
-    padding: 0.45rem 0.8rem;
-    color: rgba(30, 41, 59, 0.82);
-    text-decoration: none;
-    font-size: 0.9rem;
-    border-radius: 8px;
-    border: 1px solid transparent;
-    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
-    white-space: nowrap;
-  }
-  .nav-item:hover {
-    background: rgba(0, 0, 0, 0.06);
-    border-color: rgba(0, 0, 0, 0.1);
-    color: #0f172a;
-  }
-  .nav-item[aria-current='page'] {
-    color: #1e3a8a;
-    background: rgba(37, 99, 235, 0.12);
-    border-color: rgba(37, 99, 235, 0.35);
-    box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.12) inset;
-  }
-  .nav-ico {
-    width: 16px;
-    height: 16px;
-    border-radius: 5px;
-    flex-shrink: 0;
-    background: rgba(30, 41, 59, 0.45);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  }
-
-  /* En pantallas chicas: solo íconos (oculta texto y título) para que no se desborde. */
+  /* En pantallas chicas: solo ícono (oculta el título) para que no se desborde. */
   @media (max-width: 680px) {
     .topnav {
       padding: 0 0.6rem;
@@ -151,28 +94,10 @@
     .brand-title {
       display: none;
     }
-    .topnav-nav {
-      margin-left: 0.5rem;
-      padding-left: 0.5rem;
-      gap: 0.1rem;
-    }
-    .nav-item {
-      padding: 0.45rem 0.5rem;
-    }
-    .nav-label {
-      display: none;
-    }
   }
   @media (max-width: 360px) {
     .topnav {
       padding: 0 0.4rem;
-    }
-    .topnav-nav {
-      margin-left: 0.35rem;
-      padding-left: 0.35rem;
-    }
-    .nav-item {
-      padding: 0.45rem 0.35rem;
     }
   }
 </style>

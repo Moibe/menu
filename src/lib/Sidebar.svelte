@@ -14,15 +14,15 @@
 
   // Edita estos items por las secciones reales de tu app.
   const items = [
-    { href: '/', label: 'Proyectos' },
+    { href: '/', label: 'Negocios' },
     { href: '/menus', label: 'Menus' },
     { href: '/productos', label: 'Productos' }
   ];
 
   function isActive(href: string) {
     const path = page.url.pathname;
-    // Proyectos queda activo tanto en la lista (/) como dentro de un proyecto (/proyectos/…).
-    if (href === '/') return path === '/' || path.startsWith('/proyectos');
+    // Negocios queda activo tanto en la lista (/) como dentro de un negocio (/negocios/…).
+    if (href === '/') return path === '/' || path.startsWith('/negocios');
     return path === href || path.startsWith(href + '/');
   }
 

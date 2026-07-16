@@ -1,44 +1,44 @@
 import { error, fail } from '@sveltejs/kit';
 import { and, eq, desc } from 'drizzle-orm';
 import { db } from '$lib/server/db';
-import { proyectos, menus } from '$lib/server/db/schema';
+import { negocios, menus } from '$lib/server/db/schema';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const id = Number(params.id);
-	if (!Number.isInteger(id)) throw error(404, 'Proyecto no encontrado');
+	if (!Number.isInteger(id)) throw error(404, 'Negocio no encontrado');
 
-	const proyecto = db.select().from(proyectos).where(eq(proyectos.id, id)).get();
-	if (!proyecto) throw error(404, 'Proyecto no encontrado');
+	const negocio = db.select().from(negocios).where(eq(negocios.id, id)).get();
+	if (!negocio) throw error(404, 'Negocio no encontrado');
 
 	const lista = db
 		.select()
 		.from(menus)
-		.where(eq(menus.proyectoId, id))
+		.where(eq(menus.negocioId, id))
 		.orderBy(desc(menus.creadoEn))
 		.all();
 
-	return { proyecto, menus: lista };
+	return { negocio, menus: lista };
 };
 
 export const actions: Actions = {
 	agregarMenu: async ({ request, params }) => {
 		const id = Number(params.id);
-		if (!Number.isInteger(id)) return fail(404, { error: 'Proyecto no encontrado' });
-		const proyecto = db.select().from(proyectos).where(eq(proyectos.id, id)).get();
-		if (!proyecto) return fail(404, { error: 'Proyecto no encontrado' });
+		if (!Number.isInteger(id)) return fail(404, { error: 'Negocio no encontrado' });
+		const negocio = db.select().from(negocios).where(eq(negocios.id, id)).get();
+		if (!negocio) return fail(404, { error: 'Negocio no encontrado' });
 
 		const data = await request.formData();
 		const nombre = String(data.get('nombre') ?? '').trim();
 		if (!nombre) return fail(400, { error: 'El nombre del menú no puede estar vacío.' });
 
-		db.insert(menus).values({ proyectoId: id, nombre }).run();
+		db.insert(menus).values({ negocioId: id, nombre }).run();
 		return { success: true };
 	},
 
 	renombrarMenu: async ({ request, params }) => {
 		const id = Number(params.id);
-		if (!Number.isInteger(id)) return fail(404, { error: 'Proyecto no encontrado' });
+		if (!Number.isInteger(id)) return fail(404, { error: 'Negocio no encontrado' });
 
 		const data = await request.formData();
 		const menuId = Number(data.get('menuId'));
@@ -46,11 +46,11 @@ export const actions: Actions = {
 		if (!Number.isInteger(menuId)) return fail(400, { error: 'Menú inválido' });
 		if (!nombre) return fail(400, { error: 'El nombre del menú no puede estar vacío.' });
 
-		// El menú debe pertenecer a este proyecto.
+		// El menú debe pertenecer a este negocio.
 		const menu = db
 			.select()
 			.from(menus)
-			.where(and(eq(menus.id, menuId), eq(menus.proyectoId, id)))
+			.where(and(eq(menus.id, menuId), eq(menus.negocioId, id)))
 			.get();
 		if (!menu) return fail(404, { error: 'Menú no encontrado' });
 

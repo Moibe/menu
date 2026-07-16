@@ -1,21 +1,21 @@
 import { fail } from '@sveltejs/kit';
 import { and, eq, desc } from 'drizzle-orm';
 import { db } from '$lib/server/db';
-import { menus, proyectos, usuarios } from '$lib/server/db/schema';
+import { menus, negocios, usuarios } from '$lib/server/db/schema';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
-	// Todos los menús del usuario 'default', con el nombre de su proyecto.
+	// Todos los menús del usuario 'default', con el nombre de su negocio.
 	const lista = db
 		.select({
 			id: menus.id,
 			nombre: menus.nombre,
 			creadoEn: menus.creadoEn,
-			proyectoNombre: proyectos.nombre
+			negocioNombre: negocios.nombre
 		})
 		.from(menus)
-		.innerJoin(proyectos, eq(menus.proyectoId, proyectos.id))
-		.innerJoin(usuarios, eq(proyectos.usuarioId, usuarios.id))
+		.innerJoin(negocios, eq(menus.negocioId, negocios.id))
+		.innerJoin(usuarios, eq(negocios.usuarioId, usuarios.id))
 		.where(eq(usuarios.email, 'default'))
 		.orderBy(desc(menus.creadoEn))
 		.all();
@@ -31,12 +31,12 @@ export const actions: Actions = {
 		if (!Number.isInteger(menuId)) return fail(400, { error: 'Menú inválido' });
 		if (!nombre) return fail(400, { error: 'El nombre del menú no puede estar vacío.' });
 
-		// El menú debe pertenecer a un proyecto del usuario 'default'.
+		// El menú debe pertenecer a un negocio del usuario 'default'.
 		const row = db
 			.select({ id: menus.id })
 			.from(menus)
-			.innerJoin(proyectos, eq(menus.proyectoId, proyectos.id))
-			.innerJoin(usuarios, eq(proyectos.usuarioId, usuarios.id))
+			.innerJoin(negocios, eq(menus.negocioId, negocios.id))
+			.innerJoin(usuarios, eq(negocios.usuarioId, usuarios.id))
 			.where(and(eq(menus.id, menuId), eq(usuarios.email, 'default')))
 			.get();
 		if (!row) return fail(404, { error: 'Menú no encontrado' });
