@@ -33,7 +33,9 @@
         {#each data.members as m (m.id)}
           <li>
             <span class="mname">
-              {m.username}{#if m.isAdmin}<span class="tag">admin</span>{/if}
+              {m.username}{#if m.isAdmin}<span class="tag">admin</span>{/if}{#if m.rol === 'owner'}<span
+                  class="tag owner">dueño</span
+                >{/if}
             </span>
             <form method="POST" action="?/removeMember" use:enhance>
               <input type="hidden" name="usuarioId" value={m.id} />
@@ -223,6 +225,11 @@
     border: 1px solid rgba(22, 163, 74, 0.3);
     border-radius: 999px;
     padding: 0.05rem 0.4rem;
+  }
+  .mname .tag.owner {
+    color: #2563eb;
+    background: rgba(37, 99, 235, 0.12);
+    border-color: rgba(37, 99, 235, 0.3);
   }
   .add-member {
     display: flex;

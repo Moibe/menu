@@ -4,7 +4,6 @@
   import type { PageData, ActionData } from './$types';
 
   let { data, form }: { data: PageData; form: ActionData } = $props();
-  const isAdmin = $derived(data.user?.isAdmin ?? false);
 
   let showModal = $state(false);
   let nombre = $state('');
@@ -115,18 +114,18 @@
   <header class="head">
     <div class="titulos">
       <h1>{data.negocio.nombre}</h1>
-      {#if isAdmin}
+      {#if data.canManage}
         <a class="ajustes-link" href={`/negocios/${data.negocio.id}/settings`}>Ajustes y miembros</a>
       {/if}
     </div>
-    {#if isAdmin}
+    {#if data.canManage}
       <button type="button" class="btn-nuevo" onclick={abrir}>+ Agregar Menu</button>
     {/if}
   </header>
 
   {#if data.menus.length === 0}
     <p class="vacio">
-      {isAdmin
+      {data.canManage
         ? 'Aún no hay menús. Crea el primero con “Agregar Menu”.'
         : 'Este negocio todavía no tiene menús.'}
     </p>
@@ -175,7 +174,7 @@
                 <span class="tile-nombre">{m.nombre}</span>
               </a>
               {#if m.creadoEn}<span class="tile-fecha">{fmtFecha(m.creadoEn)}</span>{/if}
-              {#if isAdmin}{@render pencil(m)}{/if}
+              {#if data.canManage}{@render pencil(m)}{/if}
             {/if}
           </li>
         {/each}
@@ -191,7 +190,7 @@
                 <span class="item-nombre">{m.nombre}</span>
               </a>
               {#if m.creadoEn}<span class="item-fecha">{fmtFecha(m.creadoEn)}</span>{/if}
-              {#if isAdmin}{@render pencil(m)}{/if}
+              {#if data.canManage}{@render pencil(m)}{/if}
             {/if}
           </li>
         {/each}

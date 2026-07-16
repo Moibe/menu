@@ -3,7 +3,7 @@ import { and, eq, desc } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { menus } from '$lib/server/db/schema';
 import { resolveNegocio } from '$lib/server/negocio-context';
-import { requireAdmin, canSeeNegocio } from '$lib/server/access';
+import { canManageNegocio, requireManageNegocio, canSeeNegocio } from '$lib/server/access';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
@@ -16,16 +16,16 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		.orderBy(desc(menus.creadoEn))
 		.all();
 
-	return { negocio, menus: lista };
+	return { negocio, menus: lista, canManage: canManageNegocio(locals.user, negocio.id) };
 };
 
 export const actions: Actions = {
 	agregarMenu: async ({ request, params, locals }) => {
-		requireAdmin(locals.user);
 		const id = Number(params.id);
 		if (!Number.isInteger(id) || !canSeeNegocio(locals.user, id)) {
 			return fail(404, { error: 'Negocio no encontrado' });
 		}
+		requireManageNegocio(locals.user, id);
 
 		const data = await request.formData();
 		const nombre = String(data.get('nombre') ?? '').trim();
@@ -36,11 +36,11 @@ export const actions: Actions = {
 	},
 
 	renombrarMenu: async ({ request, params, locals }) => {
-		requireAdmin(locals.user);
 		const id = Number(params.id);
 		if (!Number.isInteger(id) || !canSeeNegocio(locals.user, id)) {
 			return fail(404, { error: 'Negocio no encontrado' });
 		}
+		requireManageNegocio(locals.user, id);
 
 		const data = await request.formData();
 		const menuId = Number(data.get('menuId'));

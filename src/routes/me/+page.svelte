@@ -5,10 +5,12 @@
 
   let { data, form }: { data: PageData; form: ActionData } = $props();
 
-  // Abrir automáticamente si hay feedback de la acción (error o éxito).
+  // Si hay error se abre para que lo corrijas; si se guardó bien, se repliega
+  // solo (el mensaje de éxito queda visible fuera del form).
   let pwOpen = $state(false);
   $effect(() => {
-    if (form?.pwError || form?.pwChanged) pwOpen = true;
+    if (form?.pwError) pwOpen = true;
+    if (form?.pwChanged) pwOpen = false;
   });
 
   function fmt(d: Date | string | number | null) {
@@ -52,6 +54,7 @@
       Cambiar contraseña
       <span class="chevron" class:open={pwOpen}>▾</span>
     </button>
+    {#if form?.pwChanged}<span class="ok" role="status">Contraseña actualizada.</span>{/if}
     {#if pwOpen}
       <form method="POST" action="?/changePassword" use:enhance>
         <div class="field">
@@ -67,7 +70,6 @@
           <input id="confirm" name="confirm" type="password" autocomplete="new-password" />
         </div>
         {#if form?.pwError}<span class="err" role="alert">{form.pwError}</span>{/if}
-        {#if form?.pwChanged}<span class="ok" role="status">Contraseña actualizada.</span>{/if}
         <button class="btn primary" type="submit">Actualizar contraseña</button>
       </form>
     {/if}
@@ -216,6 +218,7 @@
   }
   .ok {
     display: block;
+    margin-top: 0.6rem;
     font-size: 0.82rem;
     color: #15803d;
   }

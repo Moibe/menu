@@ -4,12 +4,13 @@ import { db } from '$lib/server/db';
 import { negocios, productos, productoFotos } from '$lib/server/db/schema';
 import { saveImage, MediaError } from '$lib/server/media';
 import { resolveMenu } from '$lib/server/negocio-context';
-import { requireAdmin } from '$lib/server/access';
+import { canManageNegocio, requireManageNegocio } from '$lib/server/access';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const menu = resolveMenu(params.id, locals.user);
 	const negocio = db.select().from(negocios).where(eq(negocios.id, menu.negocioId)).get();
+	const canManage = canManageNegocio(locals.user, menu.negocioId);
 
 	const lista = db
 		.select()
@@ -33,14 +34,15 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	return {
 		menu,
 		negocio,
+		canManage,
 		productos: lista.map((p) => ({ ...p, fotos: fotosPorProducto.get(p.id) ?? [] }))
 	};
 };
 
 export const actions: Actions = {
 	agregarProducto: async ({ request, params, locals }) => {
-		requireAdmin(locals.user);
 		const menu = resolveMenu(params.id, locals.user);
+		requireManageNegocio(locals.user, menu.negocioId);
 
 		const data = await request.formData();
 		const nombre = String(data.get('nombre') ?? '').trim();
@@ -86,8 +88,8 @@ export const actions: Actions = {
 	},
 
 	renombrarProducto: async ({ request, params, locals }) => {
-		requireAdmin(locals.user);
 		const menu = resolveMenu(params.id, locals.user);
+		requireManageNegocio(locals.user, menu.negocioId);
 
 		const data = await request.formData();
 		const productoId = Number(data.get('productoId'));

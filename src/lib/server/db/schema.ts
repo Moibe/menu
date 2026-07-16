@@ -6,8 +6,10 @@ import { relations } from 'drizzle-orm';
 // Borrar un padre arrastra a todos sus hijos (onDelete: 'cascade').
 //
 // Auth (basado en el patrón de shape_up): usuarios con sesión. Un negocio no tiene
-// "dueño" — su visibilidad la da negocio_members (quién puede verlo). Los admins
-// ven/editan todo; los demás son de solo lectura y solo ven sus negocios asignados.
+// dueño en su propia columna — su visibilidad y quién lo administra vive en
+// negocio_members. Los admins ven/editan todo. Los demás usuarios pueden crear su
+// propio negocio (nacen como "owner" de ese negocio_members) y administrarlo por
+// completo; en negocios donde solo son "member" son de solo lectura.
 
 // Helper: timestamp de creación por defecto = ahora.
 const creadoEn = () =>
@@ -44,6 +46,7 @@ export const negocios = sqliteTable('negocios', {
 });
 
 // Qué usuarios (no-admin) pueden ver cada negocio. Los admins ven todos sin importar esto.
+// rol: 'owner' (quien lo creó; puede gestionarlo por completo) | 'member' (solo lectura).
 export const negocioMembers = sqliteTable(
 	'negocio_members',
 	{
@@ -53,7 +56,8 @@ export const negocioMembers = sqliteTable(
 			.references(() => negocios.id, { onDelete: 'cascade' }),
 		usuarioId: integer('usuario_id')
 			.notNull()
-			.references(() => usuarios.id, { onDelete: 'cascade' })
+			.references(() => usuarios.id, { onDelete: 'cascade' }),
+		rol: text('rol').notNull().default('member')
 	},
 	(t) => [uniqueIndex('negocio_members_unique').on(t.negocioId, t.usuarioId)]
 );
