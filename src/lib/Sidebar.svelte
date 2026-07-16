@@ -54,9 +54,17 @@
     tiltY = 0;
     toggleCollapsed();
   }
+
+  // En móvil la sidebar es un overlay: al elegir una sección, se cierra sola.
+  // En desktop no debe cerrarse (ahí siempre está expandida junto al contenido).
+  function closeIfMobile() {
+    if (window.matchMedia('(max-width: 768px)').matches) toggleCollapsed();
+  }
 </script>
 
 {#if !collapsed}
+  <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+  <button type="button" class="scrim" onclick={toggleCollapsed} aria-label="Cerrar barra"></button>
   <aside
     class="sidebar"
     style="transform: perspective(900px) rotateX({tiltX}deg) rotateY({tiltY}deg);"
@@ -70,6 +78,7 @@
           href={it.href}
           class="nav-item"
           aria-current={isActive(it.href) ? 'page' : undefined}
+          onclick={closeIfMobile}
         >
           <span class="nav-ico" aria-hidden="true"></span>
           <span>{it.label}</span>
@@ -92,9 +101,9 @@
 <style>
   .sidebar {
     position: fixed;
-    top: calc(2rem + var(--topnav-height, 64px));
-    left: 1rem;
-    bottom: 1rem;
+    top: calc(2rem + var(--topnav-height, 64px) + env(safe-area-inset-top, 0px));
+    left: calc(1rem + env(safe-area-inset-left, 0px));
+    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
     box-sizing: border-box;
     width: max-content;
     min-width: 240px;
@@ -123,6 +132,8 @@
     overflow-y: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
   nav::-webkit-scrollbar {
     display: none;
@@ -191,7 +202,7 @@
   }
   .reveal-handle {
     position: fixed;
-    left: 0.75rem;
+    left: calc(0.75rem + env(safe-area-inset-left, 0px));
     top: 50%;
     transform: translateY(-50%);
     padding: 0.55rem 0.45rem;
@@ -204,5 +215,37 @@
       inset 0 1px 0 rgba(255, 255, 255, 0.6),
       0 4px 16px rgba(0, 0, 0, 0.1);
     z-index: 10;
+  }
+
+  /* Scrim: solo en móvil, para cerrar la sidebar tocando fuera. */
+  .scrim {
+    display: none;
+  }
+
+  /* En móvil la sidebar flota como overlay (drawer) en vez de empujar el contenido. */
+  @media (max-width: 768px) {
+    .scrim {
+      display: block;
+      position: fixed;
+      inset: 0;
+      border: 0;
+      margin: 0;
+      padding: 0;
+      background: rgba(15, 23, 42, 0.35);
+      -webkit-backdrop-filter: blur(1px);
+      backdrop-filter: blur(1px);
+      z-index: 19;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .sidebar {
+      z-index: 20;
+      width: min(82vw, 300px);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.6),
+        0 8px 32px rgba(0, 0, 0, 0.28);
+    }
+    .nav-item {
+      min-height: 44px;
+    }
   }
 </style>

@@ -39,7 +39,7 @@
 
   // Vista lista / mosaico, persistida en localStorage (mismo patrón que estudio-cine).
   const VIEW_STORAGE_KEY = 'menu:menu-productos-view';
-  let viewMode = $state<'list' | 'mosaic'>('list');
+  let viewMode = $state<'list' | 'mosaic'>('mosaic');
   onMount(() => {
     try {
       const v = localStorage.getItem(VIEW_STORAGE_KEY);
@@ -374,7 +374,7 @@
     flex: 1;
     min-width: 0;
     padding: 0.4rem 0.6rem;
-    font-size: 0.95rem;
+    font-size: 1rem;
     border: 1px solid rgba(37, 99, 235, 0.5);
     border-radius: 8px;
     outline: none;
@@ -489,7 +489,7 @@
     margin: 0;
     padding: 0;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
     gap: 0.85rem;
   }
   .tile {
@@ -561,7 +561,8 @@
     align-items: center;
     justify-content: center;
     z-index: 50;
-    padding: 1rem;
+    padding: max(1rem, env(safe-area-inset-top, 0px)) max(1rem, env(safe-area-inset-right, 0px))
+      max(1rem, env(safe-area-inset-bottom, 0px)) max(1rem, env(safe-area-inset-left, 0px));
   }
   .modal {
     width: 100%;
@@ -571,7 +572,10 @@
     padding: 1.5rem;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
     max-height: calc(100vh - 2rem);
+    max-height: calc(100dvh - 2rem);
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
   .modal h2 {
     margin: 0 0 1.1rem;

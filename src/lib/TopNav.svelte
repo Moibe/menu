@@ -33,9 +33,9 @@
 <style>
   .topnav {
     position: fixed;
-    top: 1rem;
-    left: 1rem;
-    right: 1rem;
+    top: calc(1rem + env(safe-area-inset-top, 0px));
+    left: calc(1rem + env(safe-area-inset-left, 0px));
+    right: calc(1rem + env(safe-area-inset-right, 0px));
     height: var(--topnav-height, 64px);
     padding: 0 1.25rem;
     box-sizing: border-box;
