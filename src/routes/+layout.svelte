@@ -4,8 +4,9 @@
   import favicon from '$lib/assets/favicon.svg';
   import TopNav from '$lib/TopNav.svelte';
   import Sidebar from '$lib/Sidebar.svelte';
+  import type { LayoutData } from './$types';
 
-  let { children }: { children: Snippet } = $props();
+  let { data, children }: { data: LayoutData; children: Snippet } = $props();
   // En móvil arranca replegada (se abre como overlay); en desktop, expandida.
   let collapsed = $state(browser && window.matchMedia('(max-width: 768px)').matches);
 
@@ -28,13 +29,17 @@
   <link rel="icon" href={favicon} />
 </svelte:head>
 
-<TopNav />
-<Sidebar {collapsed} {toggleCollapsed} />
-<main class={collapsed ? 'collapsed' : ''}>
-  <div class="work-scroll">
-    {@render children()}
-  </div>
-</main>
+{#if data.user}
+  <TopNav user={data.user} />
+  <Sidebar {collapsed} {toggleCollapsed} isAdmin={data.user.isAdmin} />
+  <main class={collapsed ? 'collapsed' : ''}>
+    <div class="work-scroll">
+      {@render children()}
+    </div>
+  </main>
+{:else}
+  {@render children()}
+{/if}
 
 <style>
   :global(:root) {

@@ -4,6 +4,7 @@
   import type { PageData, ActionData } from './$types';
 
   let { data, form }: { data: PageData; form: ActionData } = $props();
+  const isAdmin = $derived(data.user?.isAdmin ?? false);
 
   let showModal = $state(false);
 
@@ -116,11 +117,17 @@
       {/if}
       <h1>{data.menu.nombre}</h1>
     </div>
-    <button type="button" class="btn-nuevo" onclick={abrir}>+ Agregar Producto</button>
+    {#if isAdmin}
+      <button type="button" class="btn-nuevo" onclick={abrir}>+ Agregar Producto</button>
+    {/if}
   </header>
 
   {#if data.productos.length === 0}
-    <p class="vacio">Aún no hay productos en este menú. Agrega el primero con “Agregar Producto”.</p>
+    <p class="vacio">
+      {isAdmin
+        ? 'Aún no hay productos en este menú. Agrega el primero con “Agregar Producto”.'
+        : 'Este menú todavía no tiene productos.'}
+    </p>
   {:else}
     <div class="toolbar">
       <div class="view-toggle" role="radiogroup" aria-label="Vista">
@@ -176,7 +183,7 @@
                     <span class="tile-extra">+{p.fotos.length} foto{p.fotos.length > 1 ? 's' : ''}</span>
                   {/if}
                   {#if p.precio != null}<span class="tile-precio">{fmtPrecio(p.precio)}</span>{/if}
-                  {@render pencil(p)}
+                  {#if isAdmin}{@render pencil(p)}{/if}
                 </div>
               {/if}
             </div>
@@ -204,7 +211,7 @@
                 {/if}
               </div>
               {#if p.precio != null}<span class="item-precio">{fmtPrecio(p.precio)}</span>{/if}
-              {@render pencil(p)}
+              {#if isAdmin}{@render pencil(p)}{/if}
             {/if}
           </li>
         {/each}

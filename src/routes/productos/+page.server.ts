@@ -1,11 +1,21 @@
 import { fail } from '@sveltejs/kit';
-import { and, eq, desc } from 'drizzle-orm';
+import { eq, inArray, desc } from 'drizzle-orm';
 import { db } from '$lib/server/db';
-import { productos, menus, negocios, usuarios } from '$lib/server/db/schema';
+import { productos, menus, negocios } from '$lib/server/db/schema';
+import { requireAdmin, memberNegocioIds } from '$lib/server/access';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async () => {
-	// Todos los productos del usuario 'default', con su menú y negocio.
+// Todos los productos que el usuario puede ver (admins: todos; usuarios normales:
+// solo los de sus negocios asignados), con su menú y negocio.
+export const load: PageServerLoad = async ({ locals }) => {
+	const user = locals.user!;
+	let scope;
+	if (!user.isAdmin) {
+		const ids = memberNegocioIds(user.id);
+		if (ids.length === 0) return { productos: [] };
+		scope = inArray(negocios.id, ids);
+	}
+
 	const lista = db
 		.select({
 			id: productos.id,
@@ -19,8 +29,7 @@ export const load: PageServerLoad = async () => {
 		.from(productos)
 		.innerJoin(menus, eq(productos.menuId, menus.id))
 		.innerJoin(negocios, eq(menus.negocioId, negocios.id))
-		.innerJoin(usuarios, eq(negocios.usuarioId, usuarios.id))
-		.where(eq(usuarios.email, 'default'))
+		.where(scope)
 		.orderBy(desc(productos.creadoEn))
 		.all();
 
@@ -28,22 +37,15 @@ export const load: PageServerLoad = async () => {
 };
 
 export const actions: Actions = {
-	renombrarProducto: async ({ request }) => {
+	renombrarProducto: async ({ request, locals }) => {
+		requireAdmin(locals.user);
 		const data = await request.formData();
 		const productoId = Number(data.get('productoId'));
 		const nombre = String(data.get('nombre') ?? '').trim();
 		if (!Number.isInteger(productoId)) return fail(400, { error: 'Producto inválido' });
 		if (!nombre) return fail(400, { error: 'El nombre del producto no puede estar vacío.' });
 
-		// El producto debe pertenecer a un menú de un negocio del usuario 'default'.
-		const row = db
-			.select({ id: productos.id })
-			.from(productos)
-			.innerJoin(menus, eq(productos.menuId, menus.id))
-			.innerJoin(negocios, eq(menus.negocioId, negocios.id))
-			.innerJoin(usuarios, eq(negocios.usuarioId, usuarios.id))
-			.where(and(eq(productos.id, productoId), eq(usuarios.email, 'default')))
-			.get();
+		const row = db.select({ id: productos.id }).from(productos).where(eq(productos.id, productoId)).get();
 		if (!row) return fail(404, { error: 'Producto no encontrado' });
 
 		db.update(productos).set({ nombre }).where(eq(productos.id, productoId)).run();

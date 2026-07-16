@@ -1,20 +1,18 @@
-import { error, fail } from '@sveltejs/kit';
+import { fail } from '@sveltejs/kit';
 import { and, eq, desc } from 'drizzle-orm';
 import { db } from '$lib/server/db';
-import { negocios, menus } from '$lib/server/db/schema';
+import { menus } from '$lib/server/db/schema';
+import { resolveNegocio } from '$lib/server/negocio-context';
+import { requireAdmin, canSeeNegocio } from '$lib/server/access';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ params }) => {
-	const id = Number(params.id);
-	if (!Number.isInteger(id)) throw error(404, 'Negocio no encontrado');
-
-	const negocio = db.select().from(negocios).where(eq(negocios.id, id)).get();
-	if (!negocio) throw error(404, 'Negocio no encontrado');
+export const load: PageServerLoad = async ({ params, locals }) => {
+	const negocio = resolveNegocio(params.id, locals.user);
 
 	const lista = db
 		.select()
 		.from(menus)
-		.where(eq(menus.negocioId, id))
+		.where(eq(menus.negocioId, negocio.id))
 		.orderBy(desc(menus.creadoEn))
 		.all();
 
@@ -22,11 +20,12 @@ export const load: PageServerLoad = async ({ params }) => {
 };
 
 export const actions: Actions = {
-	agregarMenu: async ({ request, params }) => {
+	agregarMenu: async ({ request, params, locals }) => {
+		requireAdmin(locals.user);
 		const id = Number(params.id);
-		if (!Number.isInteger(id)) return fail(404, { error: 'Negocio no encontrado' });
-		const negocio = db.select().from(negocios).where(eq(negocios.id, id)).get();
-		if (!negocio) return fail(404, { error: 'Negocio no encontrado' });
+		if (!Number.isInteger(id) || !canSeeNegocio(locals.user, id)) {
+			return fail(404, { error: 'Negocio no encontrado' });
+		}
 
 		const data = await request.formData();
 		const nombre = String(data.get('nombre') ?? '').trim();
@@ -36,9 +35,12 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
-	renombrarMenu: async ({ request, params }) => {
+	renombrarMenu: async ({ request, params, locals }) => {
+		requireAdmin(locals.user);
 		const id = Number(params.id);
-		if (!Number.isInteger(id)) return fail(404, { error: 'Negocio no encontrado' });
+		if (!Number.isInteger(id) || !canSeeNegocio(locals.user, id)) {
+			return fail(404, { error: 'Negocio no encontrado' });
+		}
 
 		const data = await request.formData();
 		const menuId = Number(data.get('menuId'));

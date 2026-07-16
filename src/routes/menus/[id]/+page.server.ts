@@ -1,22 +1,20 @@
-import { error, fail } from '@sveltejs/kit';
+import { fail } from '@sveltejs/kit';
 import { and, eq, desc, inArray } from 'drizzle-orm';
 import { db } from '$lib/server/db';
-import { menus, negocios, productos, productoFotos } from '$lib/server/db/schema';
+import { negocios, productos, productoFotos } from '$lib/server/db/schema';
 import { saveImage, MediaError } from '$lib/server/media';
+import { resolveMenu } from '$lib/server/negocio-context';
+import { requireAdmin } from '$lib/server/access';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ params }) => {
-	const id = Number(params.id);
-	if (!Number.isInteger(id)) throw error(404, 'Menú no encontrado');
-
-	const menu = db.select().from(menus).where(eq(menus.id, id)).get();
-	if (!menu) throw error(404, 'Menú no encontrado');
+export const load: PageServerLoad = async ({ params, locals }) => {
+	const menu = resolveMenu(params.id, locals.user);
 	const negocio = db.select().from(negocios).where(eq(negocios.id, menu.negocioId)).get();
 
 	const lista = db
 		.select()
 		.from(productos)
-		.where(eq(productos.menuId, id))
+		.where(eq(productos.menuId, menu.id))
 		.orderBy(desc(productos.creadoEn))
 		.all();
 
@@ -40,11 +38,9 @@ export const load: PageServerLoad = async ({ params }) => {
 };
 
 export const actions: Actions = {
-	agregarProducto: async ({ request, params }) => {
-		const id = Number(params.id);
-		if (!Number.isInteger(id)) return fail(404, { error: 'Menú no encontrado' });
-		const menu = db.select().from(menus).where(eq(menus.id, id)).get();
-		if (!menu) return fail(404, { error: 'Menú no encontrado' });
+	agregarProducto: async ({ request, params, locals }) => {
+		requireAdmin(locals.user);
+		const menu = resolveMenu(params.id, locals.user);
 
 		const data = await request.formData();
 		const nombre = String(data.get('nombre') ?? '').trim();
@@ -70,7 +66,7 @@ export const actions: Actions = {
 
 			const producto = db
 				.insert(productos)
-				.values({ menuId: id, nombre, precio, fotoPrincipal })
+				.values({ menuId: menu.id, nombre, precio, fotoPrincipal })
 				.returning()
 				.get();
 
@@ -89,9 +85,9 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
-	renombrarProducto: async ({ request, params }) => {
-		const id = Number(params.id);
-		if (!Number.isInteger(id)) return fail(404, { error: 'Menú no encontrado' });
+	renombrarProducto: async ({ request, params, locals }) => {
+		requireAdmin(locals.user);
+		const menu = resolveMenu(params.id, locals.user);
 
 		const data = await request.formData();
 		const productoId = Number(data.get('productoId'));
@@ -103,7 +99,7 @@ export const actions: Actions = {
 		const producto = db
 			.select()
 			.from(productos)
-			.where(and(eq(productos.id, productoId), eq(productos.menuId, id)))
+			.where(and(eq(productos.id, productoId), eq(productos.menuId, menu.id)))
 			.get();
 		if (!producto) return fail(404, { error: 'Producto no encontrado' });
 

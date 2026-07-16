@@ -1,5 +1,9 @@
 <script lang="ts">
-  // Barra superior "de vidrio" con tilt 3D al pasar el mouse.
+  // Barra superior "de vidrio" con tilt 3D al pasar el mouse. Marca + área de usuario.
+  import Avatar from '$lib/Avatar.svelte';
+
+  let { user }: { user: { username: string } } = $props();
+
   let tiltX = $state(0);
   let tiltY = $state(0);
 
@@ -28,6 +32,16 @@
     <span class="brand-ico" aria-hidden="true"></span>
     <span class="brand-title">Menu</span>
   </a>
+
+  <div class="user-area">
+    <a class="who" href="/me" title="Mi usuario">
+      <Avatar username={user.username} size={28} />
+      <span class="who-name">{user.username}</span>
+    </a>
+    <form method="POST" action="/logout">
+      <button class="logout" type="submit">Salir</button>
+    </form>
+  </div>
 </header>
 
 <style>
@@ -82,6 +96,47 @@
     font-weight: 600;
   }
 
+  .user-area {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-left: auto;
+  }
+  .who {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(30, 41, 59, 0.9);
+    text-decoration: none;
+    border-radius: 8px;
+    padding: 0.3rem 0.5rem;
+    transition: background 0.18s ease;
+  }
+  .who:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+  .who-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  .logout {
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgba(30, 41, 59, 0.6);
+    background: transparent;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 8px;
+    padding: 0.4rem 0.75rem;
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+  }
+  .logout:hover {
+    background: rgba(220, 38, 38, 0.08);
+    border-color: rgba(220, 38, 38, 0.35);
+    color: #dc2626;
+  }
+
   /* En pantallas chicas: solo ícono (oculta el título) para que no se desborde. */
   @media (max-width: 680px) {
     .topnav {
@@ -93,6 +148,15 @@
     }
     .brand-title {
       display: none;
+    }
+    .who-name {
+      display: none;
+    }
+    .user-area {
+      gap: 0.35rem;
+    }
+    .logout {
+      padding: 0.4rem 0.55rem;
     }
   }
   @media (max-width: 360px) {

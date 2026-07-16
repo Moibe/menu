@@ -1,9 +1,13 @@
-import { sqliteTable, integer, text, real, index } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, integer, text, real, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
 
 // Jerarquía del dominio (uno-a-muchos en cascada):
-//   usuario ──< negocio ──< menú ──< producto
+//   negocio ──< menú ──< producto
 // Borrar un padre arrastra a todos sus hijos (onDelete: 'cascade').
+//
+// Auth (basado en el patrón de shape_up): usuarios con sesión. Un negocio no tiene
+// "dueño" — su visibilidad la da negocio_members (quién puede verlo). Los admins
+// ven/editan todo; los demás son de solo lectura y solo ven sus negocios asignados.
 
 // Helper: timestamp de creación por defecto = ahora.
 const creadoEn = () =>
@@ -11,27 +15,47 @@ const creadoEn = () =>
 		.notNull()
 		.$defaultFn(() => new Date());
 
-// 1 usuario tiene varios negocios.
+// La persona que entra al sistema. Sesión basada en cookie (ver $lib/server/auth.ts).
 export const usuarios = sqliteTable('usuarios', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
-	email: text('email').notNull().unique(),
-	nombre: text('nombre'),
+	username: text('username').notNull().unique(),
+	// scrypt hash almacenado como "saltHex:hashHex".
+	passwordHash: text('password_hash').notNull(),
+	// Los admins gestionan usuarios y negocios; los demás son de solo lectura.
+	isAdmin: integer('is_admin', { mode: 'boolean' }).notNull().default(false),
 	creadoEn: creadoEn()
 });
 
-// 1 negocio pertenece a un usuario y tiene varios menús.
-export const negocios = sqliteTable(
-	'negocios',
+export const sessions = sqliteTable('sessions', {
+	// SHA-256 del token de sesión (el token crudo vive solo en la cookie).
+	id: text('id').primaryKey(),
+	usuarioId: integer('usuario_id')
+		.notNull()
+		.references(() => usuarios.id, { onDelete: 'cascade' }),
+	expiresAt: integer('expires_at').notNull() // unix ms
+});
+
+// 1 negocio tiene varios menús. Sin dueño: la visibilidad la da negocio_members.
+export const negocios = sqliteTable('negocios', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	nombre: text('nombre').notNull(),
+	descripcion: text('descripcion'),
+	creadoEn: creadoEn()
+});
+
+// Qué usuarios (no-admin) pueden ver cada negocio. Los admins ven todos sin importar esto.
+export const negocioMembers = sqliteTable(
+	'negocio_members',
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
+		negocioId: integer('negocio_id')
+			.notNull()
+			.references(() => negocios.id, { onDelete: 'cascade' }),
 		usuarioId: integer('usuario_id')
 			.notNull()
-			.references(() => usuarios.id, { onDelete: 'cascade' }),
-		nombre: text('nombre').notNull(),
-		descripcion: text('descripcion'),
-		creadoEn: creadoEn()
+			.references(() => usuarios.id, { onDelete: 'cascade' })
 	},
-	(t) => [index('negocios_usuario_idx').on(t.usuarioId)]
+	(t) => [uniqueIndex('negocio_members_unique').on(t.negocioId, t.usuarioId)]
 );
 
 // 1 menú pertenece a un negocio y tiene varios productos.
@@ -89,12 +113,22 @@ export const productoFotos = sqliteTable(
 
 // Relaciones para la API de consultas de drizzle (db.query.*.findMany({ with: {...} })).
 export const usuariosRelations = relations(usuarios, ({ many }) => ({
-	negocios: many(negocios)
+	sessions: many(sessions),
+	negocioMembers: many(negocioMembers)
 }));
 
-export const negociosRelations = relations(negocios, ({ one, many }) => ({
-	usuario: one(usuarios, { fields: [negocios.usuarioId], references: [usuarios.id] }),
-	menus: many(menus)
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+	usuario: one(usuarios, { fields: [sessions.usuarioId], references: [usuarios.id] })
+}));
+
+export const negociosRelations = relations(negocios, ({ many }) => ({
+	menus: many(menus),
+	members: many(negocioMembers)
+}));
+
+export const negocioMembersRelations = relations(negocioMembers, ({ one }) => ({
+	negocio: one(negocios, { fields: [negocioMembers.negocioId], references: [negocios.id] }),
+	usuario: one(usuarios, { fields: [negocioMembers.usuarioId], references: [usuarios.id] })
 }));
 
 export const menusRelations = relations(menus, ({ one, many }) => ({
@@ -110,3 +144,12 @@ export const productosRelations = relations(productos, ({ one, many }) => ({
 export const productoFotosRelations = relations(productoFotos, ({ one }) => ({
 	producto: one(productos, { fields: [productoFotos.productoId], references: [productos.id] })
 }));
+
+// Tipos inferidos — úsalos en load functions y actions en vez de re-tipar a mano.
+export type Usuario = typeof usuarios.$inferSelect;
+export type Session = typeof sessions.$inferSelect;
+export type Negocio = typeof negocios.$inferSelect;
+export type NegocioMember = typeof negocioMembers.$inferSelect;
+export type Menu = typeof menus.$inferSelect;
+export type Producto = typeof productos.$inferSelect;
+export type ProductoFoto = typeof productoFotos.$inferSelect;

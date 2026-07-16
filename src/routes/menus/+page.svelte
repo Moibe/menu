@@ -4,6 +4,7 @@
   import type { PageData } from './$types';
 
   let { data }: { data: PageData } = $props();
+  const isAdmin = $derived(data.user?.isAdmin ?? false);
 
   function autofocusEdit(node: HTMLInputElement) {
     node.focus();
@@ -137,7 +138,7 @@
               <span class="tile-nombre">{m.nombre}</span>
             </a>
             <span class="tile-ctx">{m.negocioNombre}</span>
-            {@render pencil(m)}
+            {#if isAdmin}{@render pencil(m)}{/if}
           {/if}
         </li>
       {/each}
@@ -153,7 +154,7 @@
               <span class="item-nombre">{m.nombre}</span>
             </a>
             <span class="item-ctx">{m.negocioNombre}</span>
-            {@render pencil(m)}
+            {#if isAdmin}{@render pencil(m)}{/if}
           {/if}
         </li>
       {/each}

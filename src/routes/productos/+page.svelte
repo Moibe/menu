@@ -4,6 +4,7 @@
   import type { PageData } from './$types';
 
   let { data }: { data: PageData } = $props();
+  const isAdmin = $derived(data.user?.isAdmin ?? false);
 
   const fmtPrecio = (n: number | null) =>
     n == null ? '' : n.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
@@ -150,7 +151,7 @@
               <span class="tile-ctx">{p.negocioNombre} · {p.menuNombre}</span>
               <div class="tile-meta">
                 {#if p.precio != null}<span class="tile-precio">{fmtPrecio(p.precio)}</span>{/if}
-                {@render pencil(p)}
+                {#if isAdmin}{@render pencil(p)}{/if}
               </div>
             {/if}
           </div>
@@ -176,7 +177,7 @@
               <span class="item-ctx">{p.negocioNombre} · {p.menuNombre}</span>
             </a>
             {#if p.precio != null}<span class="item-precio">{fmtPrecio(p.precio)}</span>{/if}
-            {@render pencil(p)}
+            {#if isAdmin}{@render pencil(p)}{/if}
           {/if}
         </li>
       {/each}

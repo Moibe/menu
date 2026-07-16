@@ -4,6 +4,7 @@
   import type { PageData, ActionData } from './$types';
 
   let { data, form }: { data: PageData; form: ActionData } = $props();
+  const isAdmin = $derived(data.user?.isAdmin ?? false);
 
   let showModal = $state(false);
   let nombre = $state('');
@@ -112,12 +113,23 @@
 
 <section class="menus">
   <header class="head">
-    <h1>{data.negocio.nombre}</h1>
-    <button type="button" class="btn-nuevo" onclick={abrir}>+ Agregar Menu</button>
+    <div class="titulos">
+      <h1>{data.negocio.nombre}</h1>
+      {#if isAdmin}
+        <a class="ajustes-link" href={`/negocios/${data.negocio.id}/settings`}>Ajustes y miembros</a>
+      {/if}
+    </div>
+    {#if isAdmin}
+      <button type="button" class="btn-nuevo" onclick={abrir}>+ Agregar Menu</button>
+    {/if}
   </header>
 
   {#if data.menus.length === 0}
-    <p class="vacio">Aún no hay menús. Crea el primero con “Agregar Menu”.</p>
+    <p class="vacio">
+      {isAdmin
+        ? 'Aún no hay menús. Crea el primero con “Agregar Menu”.'
+        : 'Este negocio todavía no tiene menús.'}
+    </p>
   {:else}
     <div class="toolbar">
       <div class="view-toggle" role="radiogroup" aria-label="Vista">
@@ -163,7 +175,7 @@
                 <span class="tile-nombre">{m.nombre}</span>
               </a>
               {#if m.creadoEn}<span class="tile-fecha">{fmtFecha(m.creadoEn)}</span>{/if}
-              {@render pencil(m)}
+              {#if isAdmin}{@render pencil(m)}{/if}
             {/if}
           </li>
         {/each}
@@ -179,7 +191,7 @@
                 <span class="item-nombre">{m.nombre}</span>
               </a>
               {#if m.creadoEn}<span class="item-fecha">{fmtFecha(m.creadoEn)}</span>{/if}
-              {@render pencil(m)}
+              {#if isAdmin}{@render pencil(m)}{/if}
             {/if}
           </li>
         {/each}
@@ -241,10 +253,24 @@
     gap: 1rem;
     flex-wrap: wrap;
   }
+  .titulos {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
   h1 {
     margin: 0;
     font-size: 1.5rem;
     color: #1e293b;
+  }
+  .ajustes-link {
+    font-size: 0.8rem;
+    color: rgba(30, 41, 59, 0.55);
+    text-decoration: none;
+  }
+  .ajustes-link:hover {
+    color: #2563eb;
+    text-decoration: underline;
   }
 
   .btn-nuevo {

@@ -6,24 +6,31 @@
 
   let {
     collapsed = false,
-    toggleCollapsed
+    toggleCollapsed,
+    isAdmin = false
   }: {
     collapsed?: boolean;
     toggleCollapsed: () => void;
+    isAdmin?: boolean;
   } = $props();
 
   // Edita estos items por las secciones reales de tu app.
+  // level = profundidad jerárquica (cada uno es subconjunto del anterior: Negocios > Menus > Productos),
+  // se usa para indentar el ítem y comunicar visualmente el anidamiento.
   const items = [
-    { href: '/', label: 'Negocios' },
-    { href: '/menus', label: 'Menus' },
-    { href: '/productos', label: 'Productos' }
+    { href: '/', label: 'Negocios', level: 0 },
+    { href: '/menus', label: 'Menus', level: 1 },
+    { href: '/productos', label: 'Productos', level: 2 }
   ];
 
+  // El resaltado sigue el TIPO de contenido mostrado, no el prefijo de la URL:
+  // /negocios/[id] muestra menús → resalta "Menus"; /menus/[id] muestra productos → resalta "Productos".
   function isActive(href: string) {
     const path = page.url.pathname;
-    // Negocios queda activo tanto en la lista (/) como dentro de un negocio (/negocios/…).
-    if (href === '/') return path === '/' || path.startsWith('/negocios');
-    return path === href || path.startsWith(href + '/');
+    if (href === '/') return path === '/';
+    if (href === '/menus') return path === '/menus' || path.startsWith('/negocios/');
+    if (href === '/productos') return path === '/productos' || path.startsWith('/menus/');
+    return path === href;
   }
 
   let tiltX = $state(0);
@@ -77,14 +84,29 @@
         <a
           href={it.href}
           class="nav-item"
+          style="margin-left: calc({it.level} * 0.9rem)"
           aria-current={isActive(it.href) ? 'page' : undefined}
           onclick={closeIfMobile}
         >
-          <span class="nav-ico" aria-hidden="true"></span>
+          {#if it.level > 0}
+            <span class="nav-branch" aria-hidden="true"></span>
+          {/if}
+          <span class="nav-ico" class:nav-ico-sub={it.level > 0} aria-hidden="true"></span>
           <span>{it.label}</span>
         </a>
       {/each}
     </nav>
+
+    {#if isAdmin}
+      <a
+        href="/users"
+        class="admin-link"
+        aria-current={page.url.pathname.startsWith('/users') ? 'page' : undefined}
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+        Usuarios
+      </a>
+    {/if}
 
     <div class="sidebar-footer">
       <button type="button" class="collapse-btn" onclick={handleCollapseClick} aria-label="Replegar barra">
@@ -151,6 +173,19 @@
     border: 1px solid transparent;
     transition: background 0.18s ease, border-color 0.18s ease;
   }
+  /* Conector tipo árbol de archivos: comunica que el ítem es subconjunto del anterior. */
+  .nav-branch {
+    width: 10px;
+    align-self: stretch;
+    flex-shrink: 0;
+    border-left: 1.5px solid rgba(30, 41, 59, 0.2);
+    border-bottom: 1.5px solid rgba(30, 41, 59, 0.2);
+    border-bottom-left-radius: 6px;
+    margin-right: 0.1rem;
+  }
+  .nav-item[aria-current='page'] .nav-branch {
+    border-color: rgba(37, 99, 235, 0.4);
+  }
   .nav-ico {
     width: 16px;
     height: 16px;
@@ -158,6 +193,10 @@
     flex-shrink: 0;
     background: rgba(37, 99, 235, 0.45);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+  .nav-ico-sub {
+    width: 12px;
+    height: 12px;
   }
   .nav-item:hover {
     background: rgba(0, 0, 0, 0.06);
@@ -171,6 +210,30 @@
   }
   .nav-item[aria-current='page'] .nav-ico {
     background: #2563eb;
+  }
+  .admin-link {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 1rem;
+    padding: 0.7rem 0.95rem;
+    padding-top: 1rem;
+    color: #15803d;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    transition: background 0.18s ease, border-color 0.18s ease;
+  }
+  .admin-link:hover {
+    background: rgba(22, 163, 74, 0.08);
+  }
+  .admin-link[aria-current='page'] {
+    color: #15803d;
+    background: rgba(22, 163, 74, 0.12);
+    border-color: rgba(22, 163, 74, 0.3);
   }
   .sidebar-footer {
     display: flex;
