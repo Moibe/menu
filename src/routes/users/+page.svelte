@@ -19,15 +19,18 @@
   let editingId = $state<number | null>(null);
   let editUsername = $state('');
   let editPassword = $state('');
+  let showEditPw = $state(false);
   function startEdit(u: { id: number; username: string }) {
     editingId = u.id;
     editUsername = u.username;
     editPassword = '';
+    showEditPw = false;
   }
   function cancelEdit() {
     editingId = null;
     editUsername = '';
     editPassword = '';
+    showEditPw = false;
   }
 </script>
 
@@ -64,17 +67,40 @@
                   if (e.key === 'Escape') cancelEdit();
                 }}
               />
-              <input
-                class="edit-input"
-                name="password"
-                type="password"
-                bind:value={editPassword}
-                placeholder="Nueva contraseña (opcional)"
-                autocomplete="new-password"
-                onkeydown={(e) => {
-                  if (e.key === 'Escape') cancelEdit();
-                }}
-              />
+              <div class="pw-wrap">
+                <input
+                  class="edit-input"
+                  name="password"
+                  type={showEditPw ? 'text' : 'password'}
+                  bind:value={editPassword}
+                  placeholder="Nueva contraseña (opcional)"
+                  autocomplete="new-password"
+                  onkeydown={(e) => {
+                    if (e.key === 'Escape') cancelEdit();
+                  }}
+                />
+                <button
+                  type="button"
+                  class="eye"
+                  onclick={() => (showEditPw = !showEditPw)}
+                  aria-label={showEditPw ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  aria-pressed={showEditPw}
+                >
+                  {#if showEditPw}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                      <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                      <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+                      <line x1="2" x2="22" y1="2" y2="22" />
+                    </svg>
+                  {:else}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  {/if}
+                </button>
+              </div>
             </div>
             <div class="edit-actions">
               <button class="btn primary sm" type="submit">Guardar</button>
@@ -249,6 +275,40 @@
     outline: none;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
     box-sizing: border-box;
+  }
+  .pw-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 140px;
+  }
+  .pw-wrap .edit-input {
+    padding-right: 2.4rem;
+  }
+  .eye {
+    position: absolute;
+    right: 0.35rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: rgba(30, 41, 59, 0.5);
+    cursor: pointer;
+    border-radius: 6px;
+  }
+  .eye:hover {
+    color: #2563eb;
+  }
+  .eye svg {
+    width: 16px;
+    height: 16px;
   }
   .edit-actions {
     display: flex;
