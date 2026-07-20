@@ -41,6 +41,31 @@ export const actions: Actions = {
 		return { created: true };
 	},
 
+	editUser: async ({ request, locals }) => {
+		if (!locals.user?.isAdmin) throw redirect(303, '/');
+
+		const fd = await request.formData();
+		const userId = Number(fd.get('userId'));
+		const username = String(fd.get('username') ?? '').trim();
+		const password = String(fd.get('password') ?? '');
+		if (!Number.isInteger(userId)) return fail(400, { editError: 'Usuario inválido.', editUserId: userId });
+		if (!username) return fail(400, { editError: 'El usuario es obligatorio.', editUserId: userId });
+		if (password && password.length < 4) {
+			return fail(400, { editError: 'La contraseña debe tener al menos 4 caracteres.', editUserId: userId });
+		}
+
+		try {
+			db
+				.update(usuarios)
+				.set(password ? { username, passwordHash: hashPassword(password) } : { username })
+				.where(eq(usuarios.id, userId))
+				.run();
+		} catch {
+			return fail(409, { editError: `El usuario "${username}" ya existe.`, editUserId: userId });
+		}
+		return { edited: true };
+	},
+
 	delete: async ({ request, locals }) => {
 		if (!locals.user?.isAdmin) throw redirect(303, '/');
 
